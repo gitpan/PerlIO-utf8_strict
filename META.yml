@@ -1,0 +1,34 @@
+---
+abstract: 'Fast and correct UTF-8 IO'
+author:
+  - 'Leon Timmermans <leont@cpan.org>'
+  - 'Christian Hansen <chansen@cpan.org>'
+build_requires:
+  Carp: 0
+  Exporter: 0
+  File::Find: 0
+  File::Spec::Functions: 0
+  File::Temp: 0
+  IO::File: 0
+  Module::Build: 0.3601
+  Test::Exception: 0
+  Test::More: 0.88
+  utf8: 0
+configure_requires:
+  Module::Build: 0.3601
+dynamic_config: 0
+generated_by: 'Dist::Zilla version 4.300006, CPAN::Meta::Converter version 2.120920'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: PerlIO-utf8_strict
+requires:
+  XSLoader: 0
+  perl: 5.008
+  strict: 0
+  warnings: 0
+resources:
+  bugtracker: http://rt.cpan.org/Public/Dist/Display.html?Name=PerlIO-utf8_strict
+  repository: git://github.com/Leont/perlio-utf8_strict.git
+version: 0.001
