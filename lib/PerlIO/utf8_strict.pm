@@ -1,6 +1,6 @@
 package PerlIO::utf8_strict;
 {
-  $PerlIO::utf8_strict::VERSION = '0.001'; # TRIAL
+  $PerlIO::utf8_strict::VERSION = '0.002';
 }
 use strict;
 use warnings;
@@ -23,7 +23,7 @@ PerlIO::utf8_strict - Fast and correct UTF-8 IO
 
 =head1 VERSION
 
-version 0.001
+version 0.002
 
 =head1 SYNOPSIS
 
@@ -31,7 +31,7 @@ version 0.001
 
 =head1 DESCRIPTION
 
-This module provides a fast and correct UTF-8 PerlIO layer.
+This module provides a fast and correct UTF-8 PerlIO layer. Unlike perl's default C<:utf8> layer it checks the input for correctness.
 
 =head1 LAYER ARGUMENTS
 

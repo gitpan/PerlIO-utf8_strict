@@ -1,4 +1,10 @@
 Revision history for PerlIO-utf8_strict
 
+0.002     2012-05-30 20:43:21 Europe/Amsterdam
+          Fix bug with non-buffered lower layers
+          FIX C89 conformance
+          Documentation update
+
+
 0.001     2012-04-08 22:08:08 Europe/Amsterdam
-    -
+          Initial release

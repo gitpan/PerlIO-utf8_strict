@@ -3,7 +3,7 @@
 #include "XSUB.h"
 #include "perliol.h"
 
-#define MAX_BYTES 4
+#define UTF8_MAX_BYTES 4
 
 static const U8 xs_utf8_sequence_len[0x100] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, /* 0x00-0x0F */
@@ -53,7 +53,7 @@ static STRLEN skip_sequence(const U8 *cur, const STRLEN len) {
 static void report_illformed(pTHX_ const U8 *cur, STRLEN len, bool eof) {
 	static const char *hex = "0123456789ABCDEF";
 	const char *fmt;
-	char seq[MAX_BYTES * 3];
+	char seq[UTF8_MAX_BYTES * 3];
 	char *d = seq;
 
 	if (eof)
@@ -82,7 +82,7 @@ static STRLEN validate(pTHX_ const U8 *buf, const U8 *end, const int flags, Perl
 	const U8 *cur = buf;
 	const U8 *end4 = end - 4;
 	STRLEN skip = 0;
-	uint32_t v;
+	U32 v;
 
 	while (cur < end4) {
 		while (cur < end4 && *cur < 0x80)
@@ -164,9 +164,9 @@ static STRLEN validate(pTHX_ const U8 *buf, const U8 *end, const int flags, Perl
 
 typedef struct {
 	PerlIOBuf buf;
-	STDCHAR leftovers[MAX_BYTES];
+	STDCHAR leftovers[UTF8_MAX_BYTES];
 	size_t leftover_length;
-	int flags;
+	utf8_flags flags;
 } PerlIOUnicode;
 
 static struct {
@@ -181,23 +181,24 @@ static struct {
 	{ STR_WITH_LEN("loose"), ALLOW_SURROGATES | ALLOW_NONCHARACTERS | ALLOW_NONSHORTEST },
 };
 
-static int lookup_parameter(pTHX_ const char* ptr, size_t len) {
-	int i;
+static utf8_flags lookup_parameter(pTHX_ const char* ptr, size_t len) {
+	unsigned i;
 	for (i = 0; i < sizeof map / sizeof *map; ++i) {
 		if (map[i].length == len && memcmp(ptr, map[i].name, len) == 0)
 			return map[i].value;
 	}
-	Perl_croak(aTHX_ "Unknown argument to :utf8_strict: %*s", len, ptr);
+	Perl_croak(aTHX_ "Unknown argument to :utf8_strict: %*s", (int)len, ptr);
 }
-static int parse_parameters(pTHX_ SV* param) {
+static utf8_flags parse_parameters(pTHX_ SV* param) {
 	STRLEN len;
+	const char *begin, *delim;
 	if (!param || !SvOK(param))
 		return 0;
 
-	const char* begin = SvPV(param, len);
-	const char* delim = strchr(begin, ',');
+	begin = SvPV(param, len);
+	delim = strchr(begin, ',');
 	if(delim) {
-		int ret = 0;
+		utf8_flags ret = 0;
 		const char* end = begin + len;
 		do {
 			ret |= lookup_parameter(aTHX_ begin, delim - begin);
@@ -214,7 +215,7 @@ static int parse_parameters(pTHX_ SV* param) {
 }
 
 static IV PerlIOUnicode_pushed(pTHX_ PerlIO* f, const char* mode, SV* arg, PerlIO_funcs* tab) {
-	int flags = parse_parameters(aTHX_ arg);
+	utf8_flags flags = parse_parameters(aTHX_ arg);
 	if (PerlIOBuf_pushed(aTHX_ f, mode, arg, tab) == 0) {
 		PerlIOBase(f)->flags |= PERLIO_F_UTF8;
 		PerlIOSelf(f, PerlIOUnicode)->flags = flags;
@@ -230,6 +231,7 @@ static IV PerlIOUnicode_fill(pTHX_ PerlIO* f) {
 	SSize_t avail;
 	Size_t read_bytes = 0;
 	STDCHAR *end;
+	SSize_t fit;
 
 	if (PerlIO_flush(f) != 0)
 		return -1;
@@ -250,7 +252,7 @@ static IV PerlIOUnicode_fill(pTHX_ PerlIO* f) {
 	else {
 		b->ptr = b->end = b->buf;
 	}
-	const SSize_t fit = (SSize_t)b->bufsiz - (b->end - b->buf);
+	fit = (SSize_t)b->bufsiz - (b->end - b->buf);
 
 	if (!PerlIOValid(n)) {
 		PerlIOBase(f)->flags |= PERLIO_F_EOF;
@@ -285,12 +287,12 @@ static IV PerlIOUnicode_fill(pTHX_ PerlIO* f) {
 		}
 	}
 	else {
-		avail = PerlIO_read(n, b->ptr, fit);
+		avail = PerlIO_read(n, b->end, fit);
 		if (avail > 0)
 			read_bytes += avail;
 	}
 	if (avail <= 0) {
-		if (avail < 0 || read_bytes == 0 && PerlIO_eof(n)) {
+		if (avail < 0 || (read_bytes == 0 && PerlIO_eof(n))) {
 			PerlIOBase(f)->flags |= (avail == 0) ? PERLIO_F_EOF : PERLIO_F_ERROR;
 			return -1;
 		}
