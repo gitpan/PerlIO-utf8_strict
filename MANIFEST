@@ -19,7 +19,6 @@ t/bug.t
 t/incomplete.t
 t/non-shortest-form.t
 t/noncharacters.t
-t/release-kwalitee.t
 t/release-pod-coverage.t
 t/release-pod-syntax.t
 t/super.t

@@ -154,10 +154,10 @@ static STRLEN validate(pTHX_ const U8 *buf, const U8 *end, const int flags, Perl
 	report_illformed(aTHX_ cur, skip, eof);
 
   noncharacter:
-	if (v < 0x10000)
-		v = (v & 0x3F) | (v & 0x1F00) >> 2;
+	if (v < 0xF0808080)
+		v = (v & 0x3F) | (v & 0x3F00) >> 2 | (v & 0x0F0000) >> 4;
 	else
-		v = (v & 0x3F) | (v & 0x1F00) >> 2 | (v & 0x0F0000) >> 4;
+		v = (v & 0x3F) | (v & 0x3F00) >> 2 | (v & 0x3F0000) >> 4 | (v & 0x07000000) >> 6;
 	PerlIOBase(handle)->flags |= PERLIO_F_ERROR;
 	report_noncharacter(aTHX_ v);
 }
@@ -212,6 +212,26 @@ static utf8_flags parse_parameters(pTHX_ SV* param) {
 	else {
 		return lookup_parameter(aTHX_ begin, len);
 	}
+}
+
+void
+PerlIOBase_flush_linebuf(pTHX)
+{
+    dVAR;
+    PerlIOl **table = &PL_perlio;
+    PerlIOl *f;
+    while ((f = *table)) {
+	int i;
+	table = (PerlIOl **) (f++);
+	for (i = 1; i < 64; i++) {
+	    if (f->next
+		&& (PerlIOBase(&(f->next))->
+		    flags & (PERLIO_F_LINEBUF | PERLIO_F_CANWRITE))
+		== (PERLIO_F_LINEBUF | PERLIO_F_CANWRITE))
+		PerlIO_flush(&(f->next));
+	    f++;
+	}
+    }
 }
 
 static IV PerlIOUnicode_pushed(pTHX_ PerlIO* f, const char* mode, SV* arg, PerlIO_funcs* tab) {
