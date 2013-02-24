@@ -27,7 +27,7 @@ my %module_build_args = (
     "Christian Hansen <chansen\@cpan.org>"
   ],
   "dist_name" => "PerlIO-utf8_strict",
-  "dist_version" => "0.003",
+  "dist_version" => "0.004",
   "license" => "perl",
   "module_name" => "PerlIO::utf8_strict",
   "recommends" => {},

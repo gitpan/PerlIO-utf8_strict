@@ -31,4 +31,4 @@ requires:
 resources:
   bugtracker: http://rt.cpan.org/Public/Dist/Display.html?Name=PerlIO-utf8_strict
   repository: git://github.com/Leont/perlio-utf8_strict.git
-version: 0.003
+version: 0.004
